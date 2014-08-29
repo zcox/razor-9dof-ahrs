@@ -180,6 +180,7 @@
 #define OUTPUT__MODE_SENSORS_CALIB 2 // Outputs calibrated sensor values for all 9 axes
 #define OUTPUT__MODE_SENSORS_RAW 3 // Outputs raw (uncalibrated) sensor values for all 9 axes
 #define OUTPUT__MODE_SENSORS_BOTH 4 // Outputs calibrated AND raw sensor values for all 9 axes
+#define OUTPUT__MODE_CALIBRATE_BOTH_SENSORS_ANGLES 5
 // Output format definitions (do not change)
 #define OUTPUT__FORMAT_TEXT 0 // Outputs data as text
 #define OUTPUT__FORMAT_BINARY 1 // Outputs data as binary float
@@ -561,6 +562,11 @@ void loop()
           output_mode = OUTPUT__MODE_CALIBRATE_SENSORS;
           reset_calibration_session_flag = true;
         }
+        else if (output_param == 'x') // Go to _c_alibration mode for both sensor and angle comment: Tang
+        {
+          output_mode = OUTPUT__MODE_CALIBRATE_BOTH_SENSORS_ANGLES;
+          reset_calibration_session_flag = true;
+        }
         else if (output_param == 's') // Output _s_ensor values
         {
           char values_param = readChar();
@@ -644,6 +650,20 @@ void loop()
       Euler_angles();
       
       if (output_stream_on || output_single_on) output_angles();
+    }
+    else if (output_mode == OUTPUT__MODE_CALIBRATE_BOTH_SENSORS_ANGLES)  // Output angles
+    {
+      // Apply sensor calibration
+      compensate_sensor_errors();
+    
+      // Run DCM algorithm
+      Compass_Heading(); // Calculate magnetic heading
+      Matrix_update();
+      Normalize();
+      Drift_correction();
+      Euler_angles();
+      
+      if (output_stream_on || output_single_on) output_both_angles_and_sensors_text();
     }
     else  // Output sensor values
     {      
